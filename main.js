@@ -3,41 +3,41 @@ import fs from "fs";
 let users = [];
 
 const readCSV = () => {
-  fs.readFile("./users.csv", "utf-8", (err, data) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
+  return new Promise((resolve, reject) => {
+    fs.readFile("./users.csv", "utf-8", (err, data) => {
+      if (err) {
+        console.error(err);
+        reject("Error occurred");
+        return;
+      }
 
-    const lineSplitter = data.split("\r\n");
+      const lineSplitter = data.split("\r\n");
 
-    const keys = [];
-    users = [];
+      const keys = [];
+      users = [];
 
-    // for (let key of lineSplitter[0].split(", ")) {
-    //   keys.push(key.split(" ")[0]);
-    // }
+      lineSplitter.forEach((line, index) => {
+        const dataSplitter = line.split(", ");
 
-    lineSplitter.forEach((line, index) => {
-      const dataSplitter = line.split(", ");
+        const user = {};
 
-      const user = {};
+        dataSplitter.forEach((data, dataIndex) => {
+          if (index === 0) {
+            keys.push(data.split(" ")[0]);
+          } else {
+            user[keys[dataIndex]] = data;
+          }
+        });
 
-      dataSplitter.forEach((data, dataIndex) => {
-        if (index === 0) {
-          keys.push(data.split(" ")[0]);
-        } else {
-          user[keys[dataIndex]] = data;
-        }
+        if (index !== 0) users.push(user);
       });
-
-      if (index !== 0) users.push(user);
+      console.log(users);
+      resolve("done");
     });
-    console.log(users);
   });
 };
 
-const saveToFile = (UserName, BirthDate, Address, MobileNumber, Gender) => {
+const addToCSVFile = (UserName, BirthDate, Address, MobileNumber, Gender) => {
   const user = [UserName, BirthDate, Address, MobileNumber, Gender];
 
   fs.writeFile(
@@ -50,17 +50,35 @@ const saveToFile = (UserName, BirthDate, Address, MobileNumber, Gender) => {
   );
 };
 
+const saveToFile = async () => {
+  await readCSV();
+
+  fs.writeFile(
+    "./users.json",
+    JSON.stringify(users),
+    { flag: "w+" },
+    (err) => {},
+  );
+};
+
 const readJsonFile = () => {
-  fs.readFile("./users.csv", "utf-8", (err, data) => {
+  fs.readFile("./users.json", "utf-8", (err, data) => {
     if (err) {
-      console.error(err);
+      if (err.errno == -4058) console.error("Invalid file name", err);
+      else console.log(err);
       return;
     }
 
-    console.log(data);
+    try {
+      const parsedData = JSON.parse(data);
+      console.log(parsedData);
+    } catch (error) {
+      console.error("Invalid JSON File", error);
+    }
   });
 };
 
-// saveToFile("Aamer", "13/7/2001", "Nablus", "+972598075105", "M");
+// addToCSVFile("Aamer", "13/7/2001", "Nablus", "+972598075105", "M");
 // readCSV();
-// readJsonFile();
+readJsonFile();
+// saveToFile();
